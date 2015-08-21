@@ -1,0 +1,77 @@
+<?php
+
+/**
+ * @file
+ * The islandora_internet_archive_bookreader_custom moudule.
+ */
+
+//define('ISLANDORA_SOLR_VIEW_FEED_SELECTOR_COLLECTION', 'collection_selector');
+
+
+/**
+ * Implements hook_menu().
+ */
+function islandora_internet_archive_bookreader_custom_menu() {
+    
+    module_load_include('module', 'islandora', 'islandora');
+    
+    $items['islandora/object/%islandora_object/pdf_generator'] = array(
+        'title' => 'Generate Book PDF',
+        'page callback' => 'islandora_internet_archive_bookreader_custom_pdf_generator',
+        'page arguments' => array(2),
+        'type' => MENU_LOCAL_TASK,
+        'access callback' => 'islandora_object_manage_access_callback',
+        'weight' => 5,
+        'access arguments' => array(
+        array(
+          ISLANDORA_MANAGE_PROPERTIES,
+          ISLANDORA_METADATA_EDIT,
+          ISLANDORA_ADD_DS,
+          ISLANDORA_PURGE,
+          ISLANDORA_INGEST,
+        ), 2),
+    );
+  return $items;
+}
+
+//function islandora_internet_archive_bookreader_custom_menu_alter(array &$items) {
+//    
+//    module_load_include('module', 'islandora', 'islandora');
+//    
+//    $items['islandora/object/%islandora_object/pdf_generator'] = array(
+//        'title' => 'Generate Book PDF',
+//        'page callback' => 'islandora_internet_archive_bookreader_custom_pdf_generator',
+//        'page arguments' => array(2),
+//        'type' => MENU_LOCAL_TASK,
+//        'access callback' => 'islandora_object_manage_access_callback',
+//        'weight' => 5,
+//        'access arguments' => array(
+//        array(
+//          ISLANDORA_MANAGE_PROPERTIES,
+//          ISLANDORA_METADATA_EDIT,
+//          ISLANDORA_ADD_DS,
+//          ISLANDORA_PURGE,
+//          ISLANDORA_INGEST,
+//        ), 2),
+//    );
+//    
+//}
+
+function islandora_internet_archive_bookreader_theme_registry_alter(&$theme_registry) {
+    $theme_registry["islandora_internet_archive_bookreader"]["includes"][] = drupal_get_path('module', 'islandora_internet_archive_bookreader_custom') . "/theme/theme.inc";
+    $theme_registry["islandora_internet_archive_bookreader"]["preprocess functions"][] = "islandora_internet_archive_bookreader_preprocess_html";
+}
+
+function islandora_internet_archive_bookreader_custom_pdf_generator(AbstractObject $object) {
+
+    module_load_include('inc', 'islandora_internet_archive_bookreader_custom', 'includes/book_pdf_generator');
+    $pid = $object->id;
+    $message = islandora_internet_archive_bookreader_custom_pdf_generator_pid($pid);
+    drupal_set_message(t('%d datastream sucessfully created from book %o', array(
+        '%d' => 'PDF',
+        '%o' => $object->label))
+    );
+    $url = $GLOBALS['base_url']."/islandora/object/".$pid;    
+    drupal_goto($url);
+    exit();
+}

@@ -1,0 +1,23 @@
+<?php
+
+/**
+ * @file
+ * Install hooks for this module.
+ */
+
+/**
+ * Implements hook_install().
+ *
+ * @see islandora_book_islandora_required_objects()
+ */
+function islandora_internet_archive_bookreader_custom_install() {
+  module_load_include('module', 'islandora', 'islandora');
+  module_load_include('module', 'islandora', 'islandora_internet_archive_bookreader');
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function islandora_internet_archive_bookreader_custom_uninstall() {
+
+}

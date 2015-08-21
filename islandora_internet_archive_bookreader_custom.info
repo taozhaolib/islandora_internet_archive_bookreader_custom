@@ -1,0 +1,6 @@
+name = Islandora Internet Archive Bookreader Custom
+description = Contains the customizations to the Islandora Internet Archive Bookreader module.
+dependencies[] = islandora
+dependencies[] = islandora_internet_archive_bookreader
+version = 7.x-dev
+core = 7.x
