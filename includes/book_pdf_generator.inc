@@ -35,7 +35,7 @@ function islandora_internet_archive_bookreader_custom_pdf_generator_pid ($pid, $
     module_load_include('inc', 'islandora_paged_content', 'includes/utilities');
     module_load_include('inc', 'islandora_paged_content', 'includes/batch');
     $page_ids = islandora_paged_content_get_pages($object);//drupal_realpath
-    islandora_paged_content_create_pdf_batch($object, $page_ids, $options);
+//    islandora_paged_content_create_pdf_batch($object, $page_ids, $options);
     $pdf_pages_completed = false;
     $pages_count = count($page_ids);
     $count = 0;

@@ -21,3 +21,22 @@ span.book-page-download-btntxt {
 td.downloadLinksTableCell {
     text-align: center;
 }
+
+button #book-page-download-btn {
+    border: 2px solid;
+    border-radius: 25px;
+}
+
+span.book-page-download-btntxt {
+    color: #0071b3;
+    font-size: 12px;
+}
+
+div.socialLinkDiv {
+    margin-bottom: 5px;
+    margin-top: 2px;
+}
+
+span.socialLinkTitle {
+    color: #0071b3;
+}
