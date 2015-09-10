@@ -12,7 +12,7 @@
                         "var js, fjs = d.getElementsByTagName(s)[0]; " +
                         "if (d.getElementById(id)) return; " +
                         " js = d.createElement(s); js.id = id; " +
-                        " js.src = \"//connect.facebook.net/en_US/sdk.js#xfbml=1&version=v2.0\"; " +
+                        " js.src = \"//connect.facebook.net/en_US/sdk.js#xfbml=1&version=v2.4&appId=534924973316459\"; " +
                         " fjs.parentNode.insertBefore(js, fjs); " +
                         " \"}(document, 'script', 'facebook-jssdk')); ";
 
@@ -49,7 +49,7 @@
     Drupal.twLinkDiv = function(dataObj, twMetaAdded){
         
         var hostDivName = dataObj.hostDivName;
-        var url = "http://localhost:8000/islandora/object/islandora%3A119"; //dataObj.url;
+        var url = dataObj.url; //"http://172.28.128.3/24:8000/islandora/object/islandora%3A119"; //dataObj.url;
         var desc = dataObj.desc;
         var twitterButtons = $(".twitter-share-button");
 

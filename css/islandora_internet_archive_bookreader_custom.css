@@ -18,8 +18,8 @@ span.book-page-download-btntxt {
     font-size: 12px;
 }
 
-td.downloadLinksTableCell {
-    text-align: center;
+a.download_link {
+    font-size: 12px;
 }
 
 button #book-page-download-btn {

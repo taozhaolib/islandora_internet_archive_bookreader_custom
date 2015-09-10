@@ -123,7 +123,7 @@
                             page_display = mode.substr(0,1);
                     }
                     
-                    if(mode === 'thumb'){
+                    if(mode === 'thumb' && id !== 'BRicon_twopg' && id !== 'BRicon_onepg'){
                         return false;
                     }
                     else{                        
@@ -150,8 +150,8 @@
 
       }
       else{
-        page = parseInt(Drupal.settings.islandora_internet_archive_bookreader.current_page);
-        pages_array = [page]; 
+        //page = parseInt(Drupal.settings.islandora_internet_archive_bookreader.current_page);
+        pages_array = [1]; 
       }
       
       pages_info.pages_array = pages_array;
@@ -170,7 +170,6 @@
         $(".ui-slider-handle").attr("id","ui-slider-handle");
         
       $("#BRicon_onepg, #BRicon_twopg, #BRicon_thumb, #BRicon_book_left, #BRicon_book_right, #ui-slider-handle").each(function(){
-            //alert($(this).click);
             //if($(this).click === undefined || !$(this).click){
                 $(this).mouseup(Drupal.behaviors.addDownloadLinksDiv.attach);                            
             //}
@@ -182,13 +181,13 @@
   Drupal.behaviors.addDownloadLinksDiv = {
     attach: function(context, settings) {
       
-        var old_div = $("#book-page-download-links");
-        if(old_div){
-            old_div.remove();
-        }
-
+        var oldDiv = $("#downloadTableDiv");
+        if(oldDiv)
+            oldDiv.remove();
+        
         var pages_array = null;
-        var book_solution_page_viewer = Drupal.settings.islandora_internet_archive_bookreader.book_solution_page_viewer;
+        if(Drupal.settings.islandora_internet_archive_bookreader)
+            var book_solution_page_viewer = Drupal.settings.islandora_internet_archive_bookreader.book_solution_page_viewer;
         
         if(!book_solution_page_viewer === true){
             var pages_info = Drupal.getBookviewerBtnInfo(this);
@@ -207,42 +206,23 @@
         if(page_pids !== null){
             
             // here build up the download links:
-            var div = Drupal.settings.islandora_internet_archive_bookreader.div;
-            var downloadLinksDiv = $("<br><div id='book-page-download-links'></div>");
-            //var showDownloadBtn = $('<button id="book-page-download-links-btn" >');
+            var containerDivName = Drupal.settings.islandora_book_reader_downloadLinks.containerDiv;
+            var fileName = Drupal.settings.islandora_book_reader_downloadLinks.fileName;
+            var div = $("#"+containerDivName);
+
             var showDownloadBtn = $('<label id="book-page-download-links-btn" >');
-            var showDownloadBtnTxt = $('<span id="book-page-download-btntxt-show" class="book-page-download-btntxt"> Page image download links &gt;&gt;</span>');
-            var hideDownloadBtnTxt = $('<span id="book-page-download-btntxt-hide" class="book-page-download-btntxt" > &lt;&lt; Hide page download links</span>');
-            var downloadLinksTableContent = "<div id='downloadTableDiv'><table id='downloadLinksTable'>";
+            //var showDownloadBtnTxt = $('<span id="book-page-download-btntxt-show" class="book-page-download-btntxt"> Page image download links &gt;&gt;</span>');
+            //var hideDownloadBtnTxt = $('<span id="book-page-download-btntxt-hide" class="book-page-download-btntxt" > &lt;&lt; Hide page download links</span>');
+            var downloadLinksTableContent = "<div id='downloadTableDiv'>";
             for(var page_num in page_pids){
-
                 var page_id = page_pids[page_num];
-                downloadLinksTableContent += "<tr>";
-                downloadLinksTableContent += "<td><a class=\"download_link\" href=\""+url_base+"islandora/object/"+page_id+"/datastream/TN/download"+"\" >Page "+page_num+" (Thumbnail Image)</a></td>";
-                downloadLinksTableContent += "<td><a class=\"download_link\" href=\""+url_base+"islandora/object/"+page_id+"/datastream/JPG/download"+"\" >Page "+page_num+" (Medium Sized JPEG)</a></td>";
-                downloadLinksTableContent += "<td><a class=\"download_link\" href=\""+url_base+"islandora/object/"+page_id+"/datastream/OBJ/download"+"\" >Page "+page_num+" (Full Size TIFF)</a></td>";
-                downloadLinksTableContent += "</tr>";
-
+                var pageFileName = fileName + "_page_" + page_num;
+                downloadLinksTableContent += "<a class=\"download_link\" href=\""+url_base+"islandora/object/"+page_id+"/custom/"+pageFileName+"/TN/download"+"\" >Page "+page_num+" (Thumbnail Image)</a><BR>";
+                downloadLinksTableContent += "<a class=\"download_link\" href=\""+url_base+"islandora/object/"+page_id+"/custom/"+pageFileName+"/JPG/download"+"\" >Page "+page_num+" (Medium Sized JPEG)</a><BR>";
+                downloadLinksTableContent += "<a class=\"download_link\" href=\""+url_base+"islandora/object/"+page_id+"/custom/"+pageFileName+"/OBJ/download"+"\" >Page "+page_num+" (Full Size TIFF)</a><BR>";
             }
-            downloadLinksTableContent += "</table></div>";
-            var downloadLinksTable = $(downloadLinksTableContent);
+            div.append(showDownloadBtn).append(downloadLinksTableContent);
 
-            if(! $("#book-page-download-links").length>0) {
-                $(div).after(downloadLinksDiv);
-            }
-
-            showDownloadBtn.prepend(showDownloadBtnTxt);
-            downloadLinksDiv.prepend(showDownloadBtn).append(downloadLinksTable);
-
-        //      showDownloadBtn.click(function(){
-        //         downloadLinksTable.toggle('1500');
-        //         showDownloadBtnTxt.toggle();
-        //         hideDownloadBtnTxt.toggle();
-        //      }).prepend(showDownloadBtnTxt).prepend(hideDownloadBtnTxt);
-
-              //hideDownloadBtnTxt.hide();
-              //downloadLinksTable.hide();
-              downloadLinksTable.find('td').addClass('downloadLinksTableCell');
         }
       }
   }
