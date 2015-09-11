@@ -17,7 +17,7 @@ function islandora_internet_archive_bookreader_custom_drush_command() {
     ),
     'options' => array(),
     'examples' => array(
-      'simple example' => 'drush -u 1 --root=/var/www/drupal7 -l http://localhost islandora_bookreader_pdf_generator islandora:1',
+      'simple example' => 'drush -u 1 --root=/var/www/drupal -l http://localhost islandora_bookreader_pdf_generator islandora:1',
     ),
     'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_LOGIN,
   );
@@ -27,5 +27,5 @@ function islandora_internet_archive_bookreader_custom_drush_command() {
 
 function islandora_internet_archive_bookreader_custom_pdf_generator_drush($pid) {
     module_load_include('inc', 'islandora_internet_archive_bookreader_custom', 'includes/book_pdf_generator');
-    islandora_internet_archive_bookreader_custom_pdf_generator_pid($pid);
+    islandora_internet_archive_bookreader_custom_pdf_generator_pid($pid, TRUE);
 }
