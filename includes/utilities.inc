@@ -30,9 +30,7 @@ function bookreader_custom_social_link_block_view(AbstractFedoraObject $object) 
 
         $block = array
         (
-          'subject' => t('Share the book:'),
-          'content' => array
-          (
+
             '#attached' => array
             (
               'js' => array
@@ -57,7 +55,6 @@ function bookreader_custom_social_link_block_view(AbstractFedoraObject $object) 
                   'data' => $path . '/css/islandora_internet_archive_bookreader_custom.css',
               ),
             ),
-          ),
         );
     }
     catch(Exception $e){
@@ -79,29 +76,27 @@ function bookreader_custom_download_block_view(AbstractFedoraObject $object) {
     
     $block = array
     (
-      'content' => array(
-          '#markup' => t('<a href="'.$link.'">PDF book download</a><BR><BR>'),
-          '#attached' => array
+        '#markup' => t('<a href="'.$link.'">PDF book download</a><BR><BR>'),
+        '#attached' => array
+          (
+            'js' => array
             (
-              'js' => array
-              (
-                array(
-                    'type' => 'setting',
-                    'path' => $path,
-                    'data' => array('islandora_book_reader_downloadLinks' => $download_settings),
-                ),
-                array
-                (
-                  'type' => 'file',
-                  'data' => $path . '/js/book_page_download.js',
-                ),
+              array(
+                  'type' => 'setting',
+                  'path' => $path,
+                  'data' => array('islandora_book_reader_downloadLinks' => $download_settings),
               ),
-              'css' => array(
-                  'type' => 'file',
-                  'data' => $path . '/css/islandora_internet_archive_bookreader_custom.css',
+              array
+              (
+                'type' => 'file',
+                'data' => $path . '/js/book_page_download.js',
               ),
             ),
-        ),      
+            'css' => array(
+                'type' => 'file',
+                'data' => $path . '/css/islandora_internet_archive_bookreader_custom.css',
+            ),
+          ),   
     );
     return $block;
 }
