@@ -5,7 +5,7 @@
  */
 
 (function ($) {
-    Drupal.getPageUrl = function(pages, pageNum){
+    Drupal.getPageInfo = function(pages, pageNum){
         
         var pageUrl = '';        
         var pageInfo = new Object();
@@ -47,8 +47,6 @@
             
             var pageNum = 1;
             var pageInfo = new Object();
-            var pageLabel = '';
-            var pageImgUrl = '';
             var currentUrl = document.URL;
             
             // ge the page object id:            
@@ -59,7 +57,7 @@
                 pageNum = '1';
             }
             
-            pageInfo = Drupal.getPageUrl(pages, pageNum);
+            pageInfo = Drupal.getPageInfo(pages, pageNum);
             
             var hostPageDivName = "pageSocialLinkDiv";
             blockContainer.append("<BR><span class='socialLinkTitle'>Current page:<BR>"+pageInfo.pageLabel+"</span><BR><div id=" + hostPageDivName + "></div>");
@@ -89,7 +87,7 @@
                 Drupal.settings.islandora_socialLinks = new Object();
             }
             Drupal.settings.islandora_socialLinks.shareLinkData = shareLinkData;
-            Drupal.settings.islandora_socialLinks.socialLinkTypes = "fb,tw";
+            Drupal.settings.islandora_socialLinks.socialLinkTypes = "fb,tw,pi";
             
         }
     };
