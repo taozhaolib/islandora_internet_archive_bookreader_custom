@@ -75,12 +75,31 @@
             twLink.after(twScriptTxt);
     };
     
+    Drupal.pinButtonDiv = function(dataObj, pinitjsCalled) {
+        
+        var hostDivName = dataObj.hostDivName;
+        
+        if(pinitjsCalled === false){
+            var pinScriptTxt = "<script type=\"text/javascript\" async defer src=\"//assets.pinterest.com/js/pinit.js\"></script>";
+
+            var script = $(pinScriptTxt);
+
+            var pinLink = $("<a href=\"//www.pinterest.com/pin/create/button/\" data-pin-do=\"buttonBookmark\"  data-pin-color=\"red\" data-pin-height=\"20\"><img src=\"//assets.pinterest.com/images/pidgets/pinit_fg_en_rect_red_20.png\" /></a>");
+
+            var head = $("head");
+            head.append(script);
+        }
+        
+        $("#"+hostDivName).append(pinLink); 
+    }
+    
     Drupal.behaviors.addSocialLink = {
         attach: function(context, settings){
             var socialLinkTypes = Drupal.settings.islandora_socialLinks.socialLinkTypes.split(',');
             var shareLinkData = Drupal.settings.islandora_socialLinks.shareLinkData;
             var fbMetaAdded = false;
             var twMetaAdded = false;
+            var pinitjsCalled = false;
             
             if(Array.isArray(shareLinkData) && shareLinkData.length > 0){
                 for(var j = 0; j < shareLinkData.length; j++){
@@ -96,6 +115,8 @@
                                 twMetaAdded = true;
                                 break;
                             case 'pi':
+                                Drupal.pinButtonDiv(shareLinkData[j], pinitjsCalled);
+                                pinitjsCalled = true;
                                 break;
                             default:
                                 alert("Illegal social link type specified!");
