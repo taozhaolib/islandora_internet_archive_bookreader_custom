@@ -223,8 +223,8 @@ function get_download_file_prefix(AbstractFedoraObject $object) {
         }
         
         $uuid = '';
-        $fileNameInfo['author'] = $namePrefix;
         $fileNameInfo['year'] = $yearPrefix;
+        $fileNameInfo['author'] = $namePrefix;        
         $fileNameInfo['uuid'] = $uuid;
         $fileName = '';
         
