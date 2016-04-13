@@ -175,19 +175,19 @@ function get_download_file_prefix(AbstractFedoraObject $object) {
         $content = $stream->repository->api->a->getDatastreamDissemination($pid, $stream->id, $stream->createdDate, null);
         
         // build a fake $content in order to mimic the MODS data in repository.ou.edu to execute the code, development purpose only
-        $content = "<?xml version=\"1.0\" encoding=\"utf-8\"?><mods version=\"3.5\" xsi:schemaLocation=\"http://www.loc.gov/mods/v3 http://www.loc.gov/standards/mods/v3/mods-3-5.xsd\">"
-                        . "<name type=\"personal\" usage=\"primary\">"
-                            . "<namePart>Gaubil, Antoine</namePart>"
-                            . "<namePart type=\"date\">1689-1759</namePart>"
-                        . "</name>"
-                        . "<originInfo>"
-                            . "<place><placeTerm type=\"code\" authority=\"marccountry\">enk</placeTerm></place>"
-                            . "<place><placeTerm type=\"text\">London]</placeTerm></place>"
-                            . "<dateIssued>[1758]</dateIssued>"
-                            . "<dateIssued encoding=\"marc\">1758</dateIssued>"
-                            . "<issuance>monographic</issuance>"
-                        . "</originInfo>"
-                    . "</mods>";
+/*        $content = "<?xml version=\"1.0\" encoding=\"utf-8\"?><mods version=\"3.5\" xsi:schemaLocation=\"http://www.loc.gov/mods/v3 http://www.loc.gov/standards/mods/v3/mods-3-5.xsd\">" */
+//                        . "<name type=\"personal\" usage=\"primary\">"
+//                            . "<namePart>Gaubil, Antoine</namePart>"
+//                            . "<namePart type=\"date\">1689-1759</namePart>"
+//                        . "</name>"
+//                        . "<originInfo>"
+//                            . "<place><placeTerm type=\"code\" authority=\"marccountry\">enk</placeTerm></place>"
+//                            . "<place><placeTerm type=\"text\">London]</placeTerm></place>"
+//                            . "<dateIssued>[1758]</dateIssued>"
+//                            . "<dateIssued encoding=\"marc\">1758</dateIssued>"
+//                            . "<issuance>monographic</issuance>"
+//                        . "</originInfo>"
+//                    . "</mods>";
         
         $namePrefix = "";
         $yearPrefix = "";
@@ -240,4 +240,111 @@ function get_download_file_prefix(AbstractFedoraObject $object) {
     }
     
     return $fileName;
+}
+
+function save_islandora_bookreader_custom_configuration($collection, $pdf_download_show, $page_download_show, $social_link_show) {
+    
+    global $user;
+    $uid = $user->uid;
+//    $values = array();
+//    
+//    $values[] = array(
+//        'pid' => $collection,
+//        'pdf_download_show' => $pdf_download_show,
+//        'page_download_show' => $page_download_show,
+//        'social_link_show' => $social_link_show,
+//        'created_time' => REQUEST_TIME,
+//        'creator' => $uid,
+//    );
+//    
+//    $query = db_insert('islandora_bookreader_custom')->fields(
+//            array('pid', 'pdf_download_show', 'page_download_show', 'social_link_show', 'created_time', 'creator')
+//        );
+//    
+//    foreach ($values as $record) {
+//        $query->values($record);
+//    }
+//    $query->execute();
+    
+    db_merge("islandora_bookreader_custom")
+        ->key(array('pid' => $collection))
+        ->fields(array('pdf_download_show' => $pdf_download_show, 'page_download_show' => $page_download_show, 'social_link_show' => $social_link_show,
+            'created_time' => REQUEST_TIME))
+        ->execute();
+}
+
+function load_islandora_bookreader_custom_configuration($pid) {
+    $configurations = array();
+    $result = db_query('SELECT n.id, n.pid, n.pdf_download_show, n.page_download_show, n.social_link_show, n.book_pdf_source_type, n.social_link_type, n.creator, n.created_time
+    FROM {islandora_bookreader_custom} n WHERE n.pid = :pid', array(':pid' => $pid));
+    foreach ($result as $record) {
+        $configurations[$record->pid] = (array)$record;
+    }
+    return $configurations;
+}
+
+function get_parent_collection_pid(AbstractFedoraObject $object) {
+    module_load_include('inc', 'islandora_internet_archive_bookreader_custom', 'includes/utilities');
+    
+    $repository = $object->repository;
+    $pid = $object->id;
+    
+    $query = <<<EOQ
+    PREFIX islandora-rels-ext: <http://islandora.ca/ontology/relsext#>
+    PREFIX fedora-rels-ext: <info:fedora/fedora-system:def/relations-external#>
+    SELECT DISTINCT ?object ?label
+    FROM <#ri>
+    WHERE {
+        <info:fedora/!pid> ?collection_predicate ?object;
+        <fedora-model:label> ?label .
+        ?object <fedora-model:state> <fedora-model:Active>
+        .
+        !optionals
+        !filters
+          }
+        !order
+EOQ;
+
+    $query_optionals = (array) module_invoke('islandora_xacml_api', 'islandora_basic_collection_get_query_optionals', 'view');
+    $query_filters = (array) module_invoke('islandora_xacml_api', 'islandora_basic_collection_get_query_filters');
+    $filter_map = function ($filter) {
+      return "FILTER($filter)";
+    };
+    $collection_predicate_filters = "sameTerm(?collection_predicate, <fedora-rels-ext:isPartOf>)";
+    $collection_predicate_filters .= " || sameTerm(?collection_predicate, <fedora-rels-ext:isMemberOfCollection>) || sameTerm(?collection_predicate, <fedora-rels-ext:isMemberOf>)";
+    $query_filters[] = $collection_predicate_filters;
+    $query_order = "ORDER BY DESC(?label)";
+    $query = format_string($query, array(
+      '!optionals' => !empty($query_optionals) ? ('OPTIONAL {{' . implode('} UNION {', $query_optionals) . '}}') : '',
+      '!filters' => implode(' ', array_map($filter_map, $query_filters)),
+      '!order' => $query_order,
+    ));
+    $query = format_string($query, array(
+      '!pid' => $pid,
+    ));
+
+    $results = $repository->ri->sparqlQuery($query, 'unlimited');
+
+    if (count($results) > 0) {
+      return $parent = $results[0]['object']['value'];
+    }
+}
+
+function hasAccessCustomFeature(AbstractFedoraObject $object, $type){
+    $has_access = FALSE;
+    
+    $pid = $object->id;
+    if(!empty($pid)){
+        $parent = get_parent_collection_pid($object);
+        $configurations = load_islandora_bookreader_custom_configuration($parent);
+        switch($type){
+            case "pdf_generator":
+                $has_access = $configurations[$parent]['pdf_download_show'];
+                break;
+            default:
+                break;
+        }
+    }
+    
+    return $has_access;
 }
