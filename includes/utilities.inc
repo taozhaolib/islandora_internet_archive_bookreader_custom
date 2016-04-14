@@ -67,7 +67,11 @@ function bookreader_custom_download_block_view(AbstractFedoraObject $object) {
     
     $fileName = get_download_file_prefix($object);    
     
-    $link = $GLOBALS['base_url']."/islandora/object/".$object->id."/custom/".$fileName."/PDF/download";
+    $pdf_download_link = "";
+    if(hasAccessCustomFeature($object, "pdf_generator") == TRUE){
+        $link = $GLOBALS['base_url']."/islandora/object/".$object->id."/custom/".$fileName."/PDF/download";
+        $pdf_download_link = t('<a href="'.$link.'">PDF book download</a><BR>');
+    }
     $path = drupal_get_path('module', 'islandora_internet_archive_bookreader_custom');
     $download_settings = array(
         'fileName' => $fileName,
@@ -76,7 +80,7 @@ function bookreader_custom_download_block_view(AbstractFedoraObject $object) {
     
     $block = array
     (
-        '#markup' => t('<a href="'.$link.'">PDF book download</a><BR>'),
+        '#markup' => $pdf_download_link,
         '#attached' => array
           (
             'js' => array
