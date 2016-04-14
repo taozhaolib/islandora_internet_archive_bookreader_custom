@@ -112,6 +112,11 @@ function islandora_internet_archive_bookreader_custom_block_view($delta = '') {
         if($pid = get_pid_by_url()){
 
             $object = islandora_object_load($pid);
+            
+            if(empty($object) || hasAccessCustomFeature($object, "download_block") == FALSE){
+                return null;
+            }
+
             $fedoraObjExt = new FedoraObjectExtended($object->id, $object->repository);
             $model = $fedoraObjExt->getFedoraObjectModel();            
             if(empty($model) || $model !== "bookCModel"){

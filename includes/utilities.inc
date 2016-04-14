@@ -76,7 +76,7 @@ function bookreader_custom_download_block_view(AbstractFedoraObject $object) {
     
     $block = array
     (
-        '#markup' => t('<a href="'.$link.'">PDF book download</a><BR><BR>'),
+        '#markup' => t('<a href="'.$link.'">PDF book download</a><BR>'),
         '#attached' => array
           (
             'js' => array
@@ -326,6 +326,9 @@ function hasAccessCustomFeature(AbstractFedoraObject $object, $type){
             switch($type){
                 case "pdf_generator":
                     $has_access = $configurations['pdf_download_show'];
+                    break;
+                case "download_block":
+                    $has_access = $configurations['page_download_show'];
                     break;
                 default:
                     break;
