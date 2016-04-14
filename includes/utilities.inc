@@ -246,41 +246,26 @@ function save_islandora_bookreader_custom_configuration($collection, $pdf_downlo
     
     global $user;
     $uid = $user->uid;
-//    $values = array();
-//    
-//    $values[] = array(
-//        'pid' => $collection,
-//        'pdf_download_show' => $pdf_download_show,
-//        'page_download_show' => $page_download_show,
-//        'social_link_show' => $social_link_show,
-//        'created_time' => REQUEST_TIME,
-//        'creator' => $uid,
-//    );
-//    
-//    $query = db_insert('islandora_bookreader_custom')->fields(
-//            array('pid', 'pdf_download_show', 'page_download_show', 'social_link_show', 'created_time', 'creator')
-//        );
-//    
-//    foreach ($values as $record) {
-//        $query->values($record);
-//    }
-//    $query->execute();
     
-    db_merge("islandora_bookreader_custom")
-        ->key(array('pid' => $collection))
-        ->fields(array('pdf_download_show' => $pdf_download_show, 'page_download_show' => $page_download_show, 'social_link_show' => $social_link_show,
-            'created_time' => REQUEST_TIME))
-        ->execute();
+    $settings_arr = array();
+    
+    $settings = variable_get("bookreader_custom_configurations");
+    if(!empty($settings)){
+        $settings_arr = json_decode($settings, TRUE);
+    }
+    $settings_arr[$collection]["pdf_download_show"] = $pdf_download_show;
+    $settings_arr[$collection]["page_download_show"] = $page_download_show;
+    $settings_arr[$collection]["social_link_show"] = $social_link_show;
+    
+    variable_set("bookreader_custom_configurations", json_encode($settings_arr));
 }
 
 function load_islandora_bookreader_custom_configuration($pid) {
-    $configurations = array();
-    $result = db_query('SELECT n.id, n.pid, n.pdf_download_show, n.page_download_show, n.social_link_show, n.book_pdf_source_type, n.social_link_type, n.creator, n.created_time
-    FROM {islandora_bookreader_custom} n WHERE n.pid = :pid', array(':pid' => $pid));
-    foreach ($result as $record) {
-        $configurations[$record->pid] = (array)$record;
+    $configurations = variable_get("bookreader_custom_configurations");
+    if(!empty($configurations)){
+        $configurations = json_decode($configurations, TRUE);
     }
-    return $configurations;
+    return $configurations[$pid];
 }
 
 function get_parent_collection_pid(AbstractFedoraObject $object) {
@@ -337,12 +322,14 @@ function hasAccessCustomFeature(AbstractFedoraObject $object, $type){
     if(!empty($pid)){
         $parent = get_parent_collection_pid($object);
         $configurations = load_islandora_bookreader_custom_configuration($parent);
-        switch($type){
-            case "pdf_generator":
-                $has_access = $configurations[$parent]['pdf_download_show'];
-                break;
-            default:
-                break;
+        if(!empty($configurations)){
+            switch($type){
+                case "pdf_generator":
+                    $has_access = $configurations['pdf_download_show'];
+                    break;
+                default:
+                    break;
+            }
         }
     }
     
