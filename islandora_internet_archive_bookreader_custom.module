@@ -122,14 +122,18 @@ function islandora_internet_archive_bookreader_custom_block_view($delta = '') {
             if(empty($model) || $model !== "bookCModel"){
                 return;
             }
-            switch ($delta) {
+            switch ($delta) {                
                 case 'social_link_block':
-                    $block['subject'] = 'Share this book:';
-                    $block['content'] = bookreader_custom_social_link_block_view($object);
-                    break;
+                    if(hasAccessCustomFeature($object, "pdf_generator") == TRUE){
+                        $block['subject'] = 'Share this book:';
+                        $block['content'] = bookreader_custom_social_link_block_view($object);
+                    }
+                    break;                
                 case 'reader_block':
                     $block['subject'] = 'Book and pages download links:';
                     $block['content'] = bookreader_custom_download_block_view($object);
+                    break;
+                default:
                     break;
             }
         }
@@ -300,16 +304,8 @@ function islandora_bookreader_custom_access_callback($perms, AbstractFedoraObjec
     
     $has_access = FALSE;
     
-    $models = $object->models;
-    $model = $models[0];
-    if($model == "islandora:bookCModel"){
-        $has_access = TRUE;
-    }
-    
-    if($has_access == TRUE){
-        for ($i = 0; $i < count($perms) && !$has_access; $i++) {
-          $has_access = $has_access || islandora_object_access($perms[$i], $object);
-        }
+    for ($i = 0; $i < count($perms) && !$has_access; $i++) {
+      $has_access = $has_access || islandora_object_access($perms[$i], $object);
     }
     
     if($has_access == TRUE && !empty($custom_type)){

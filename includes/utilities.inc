@@ -149,6 +149,21 @@ function get_page_by_url() {
     }
 }
 
+function get_object_link_by_url(){
+    global $base_url;
+    $url = current_path();
+    //$url = "https://dev.repository.ou.edu/uuid/f5315243-4db4-59a6-b60c-03c016ebdafb#page/18/mode/2up"; //current_path();
+    $pid = get_pid_by_url();
+    if(strpos($url, "uuid") !== FALSE){
+        $id = explode(":", $pid);
+        $id = $id[1];
+        return $base_url . "/uuid/" . $id;
+    }
+    elseif(strpos($url, "islandora/object") !== FALSE){
+        return $base_url . "/islandora/object/" . $pid;
+    }
+}
+
 /**
  * 
  */
@@ -265,7 +280,12 @@ function load_islandora_bookreader_custom_configuration($pid) {
     if(!empty($configurations)){
         $configurations = json_decode($configurations, TRUE);
     }
-    return $configurations[$pid];
+    if(!empty($configurations[$pid])){
+        return $configurations[$pid]; 
+    }
+    else{
+        return NULL;
+    }
 }
 
 function get_parent_collection_pid(AbstractFedoraObject $object) {
@@ -317,6 +337,12 @@ EOQ;
 
 function hasAccessCustomFeature(AbstractFedoraObject $object, $type){
     $has_access = FALSE;
+    
+    $models = $object->models;
+    $model = $models[0];
+    if($model == "islandora:bookCModel"){
+        $has_access = TRUE;
+    }
     
     $pid = $object->id;
     if(!empty($pid)){

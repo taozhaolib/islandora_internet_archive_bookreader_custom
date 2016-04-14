@@ -64,7 +64,8 @@ function islandora_internet_archive_bookreader_custom_pdf_generator_pid ($pid, $
             drush_backend_batch_process();
         }
         else{
-            batch_process('islandora/object/'.$pid.'/datastream/PDF/view');
+            $url = get_object_link_by_url();
+            batch_process($url);
         }
     }
     catch(Exception $ex){
