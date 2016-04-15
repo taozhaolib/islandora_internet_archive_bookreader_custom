@@ -6,6 +6,7 @@ function bookreader_custom_social_link_block_view(AbstractFedoraObject $object) 
     $block = null;
     
     $path = drupal_get_path('module', 'islandora_internet_archive_bookreader_custom');
+    $object_url_base = get_object_url_base_by_url();
    
     try{
         $pid = $object->id;
@@ -25,7 +26,8 @@ function bookreader_custom_social_link_block_view(AbstractFedoraObject $object) 
           'pageImgUrl' => '',
           'PageDesc' => '',
           'bookDesc' => $object->label,
-          'pages' => $pages
+          'pages' => $pages,
+          'objectUrlBase' => $object_url_base
         );
 
         $block = array
@@ -66,16 +68,24 @@ function bookreader_custom_social_link_block_view(AbstractFedoraObject $object) 
 function bookreader_custom_download_block_view(AbstractFedoraObject $object) {
     
     $fileName = get_download_file_prefix($object);    
+    $object_url_base = get_object_url_base_by_url();
     
     $pdf_download_link = "";
     if(hasAccessCustomFeature($object, "pdf_generator") == TRUE){
-        $link = $GLOBALS['base_url']."/islandora/object/".$object->id."/custom/".$fileName."/PDF/download";
+        if(strpos($object_url_base, "/islandora/object/") !== FALSE){
+            $link = $GLOBALS['base_url']."/islandora/object/".$object->id."/custom/".$fileName."/PDF/download";
+        }
+        elseif(strpos($object_url_base, "/uuid/")){
+            $uuid = explode(":", $object->id)[1];
+            $link = $GLOBALS['base_url']."/islandora/object/".$uuid."/custom/".$fileName."/PDF/download";
+        }
         $pdf_download_link = t('<a href="'.$link.'">PDF book download</a><BR>');
     }
     $path = drupal_get_path('module', 'islandora_internet_archive_bookreader_custom');
     $download_settings = array(
         'fileName' => $fileName,
         'containerDiv' => 'block-islandora-internet-archive-bookreader-custom-reader-block',
+        'objectUrlBase' => $object_url_base
     );
     
     $block = array
@@ -150,6 +160,21 @@ function get_page_by_url() {
     }
     else{
         return false;
+    }
+}
+
+function get_object_url_base_by_url(){
+    global $base_url;
+    $url = current_path();
+    //$url = "https://dev.repository.ou.edu/uuid/f5315243-4db4-59a6-b60c-03c016ebdafb#page/18/mode/2up"; //current_path();
+    $pid = get_pid_by_url();
+    if(strpos($url, "uuid") !== FALSE){
+        $id = explode(":", $pid);
+        $id = $id[1];
+        return $base_url . "/uuid/";
+    }
+    elseif(strpos($url, "islandora/object") !== FALSE){
+        return $base_url . "/islandora/object/";
     }
 }
 

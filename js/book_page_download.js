@@ -33,11 +33,11 @@
       var url = document.URL;
       var urlArr = url.split("#page/");
       
-      if(urlArr.length == 2){
+      if(urlArr.length === 2){
           var bookUrl = urlArr[0].split("//")[1].split("/")[0];
           var urlHashInfo = urlArr[1];
           var pageArr = urlHashInfo.split("/");
-          if(pageArr.length != 3){
+          if(pageArr.length !== 3){
               return null;
           }
           var currentPage = parseInt(pageArr[0]);
@@ -174,13 +174,11 @@
         if(!book_solution_page_viewer === true){
             var pages_info = Drupal.getDownloadPageIds();
             pagesArray = pages_info.pagesArray;
-            var url_base = window.location.protocol + "//" + window.location.host + "/";
             var page_pids = Drupal.getPageIdByNumbers(pagesArray, book_solution_page_viewer);
         }
         else{
             pagesArray = [Drupal.settings.islandora_internet_archive_bookreader.page_object_id];
             var page_url = document.URL;
-            var url_base = page_url.split("islandora/")[0];
             var page_pids = new Object;
             page_pids[Drupal.settings.islandora_internet_archive_bookreader.page_num] = Drupal.settings.islandora_internet_archive_bookreader.page_object_id;
         }
@@ -190,6 +188,7 @@
             // here build up the download links:
             var containerDivName = Drupal.settings.islandora_book_reader_downloadLinks.containerDiv;
             var fileName = Drupal.settings.islandora_book_reader_downloadLinks.fileName;
+            var objUrlBase = Drupal.settings.islandora_book_reader_downloadLinks.objectUrlBase;
             var div = $("#"+containerDivName);
 
             var showDownloadBtn = $('<label id="book-page-download-links-btn" >');
@@ -199,147 +198,24 @@
             for(var page_num in page_pids){
                 var page_id = page_pids[page_num];
                 var pageFileName = fileName + "_page_" + page_num;
-                downloadLinksTableContent += "<a class=\"download_link\" href=\""+url_base+"islandora/object/"+page_id+"/custom/"+pageFileName+"/TN/download"+"\" >Page "+page_num+" (Thumbnail Image)</a><BR>";
-                downloadLinksTableContent += "<a class=\"download_link\" href=\""+url_base+"islandora/object/"+page_id+"/custom/"+pageFileName+"/JPG/download"+"\" >Page "+page_num+" (Medium Sized JPEG)</a><BR>";
-                downloadLinksTableContent += "<a class=\"download_link\" href=\""+url_base+"islandora/object/"+page_id+"/custom/"+pageFileName+"/OBJ/download"+"\" >Page "+page_num+" (Full Size TIFF)</a><BR>";
+                if(objUrlBase.includes('/islandora/object/')){
+                    downloadLinksTableContent += "<a class=\"download_link\" href=\""+objUrlBase+page_id+"/custom/"+pageFileName+"/TN/download"+"\" >Page "+page_num+" (Thumbnail Image)</a><BR>";
+                    downloadLinksTableContent += "<a class=\"download_link\" href=\""+objUrlBase+page_id+"/custom/"+pageFileName+"/JPG/download"+"\" >Page "+page_num+" (Medium Sized JPEG)</a><BR>";
+                    downloadLinksTableContent += "<a class=\"download_link\" href=\""+objUrlBase+page_id+"/custom/"+pageFileName+"/OBJ/download"+"\" >Page "+page_num+" (Full Size TIFF)</a><BR>";
+                }
+                else if(objUrlBase.includes('/uuid/')){
+                    var uuid = page_id.split(':')[1];
+                    downloadLinksTableContent += "<a class=\"download_link\" href=\""+objUrlBase+uuid+"/custom/"+pageFileName+"/TN/download"+"\" >Page "+page_num+" (Thumbnail Image)</a><BR>";
+                    downloadLinksTableContent += "<a class=\"download_link\" href=\""+objUrlBase+uuid+"/custom/"+pageFileName+"/JPG/download"+"\" >Page "+page_num+" (Medium Sized JPEG)</a><BR>";
+                    downloadLinksTableContent += "<a class=\"download_link\" href=\""+objUrlBase+uuid+"/custom/"+pageFileName+"/OBJ/download"+"\" >Page "+page_num+" (Full Size TIFF)</a><BR>";
+                }
             }
             div.append(showDownloadBtn).append(downloadLinksTableContent);
 
         }
       }
-  }
+  };
   
-  //  Drupal.getBookviewerBtnInfo = function(btn){
-//        var pages_array = null;        
-//        var pages_info = new Object;
-//
-//        var page_url = document.URL;
-//        var url_base = page_url.split("islandora/")[0];
-//        var page_mode_array = page_url.split("#page/");
-//        
-//        if(null !== page_mode_array && page_mode_array.length == 2){
-//            var page_mode_info = page_mode_array[1].split("/mode/");
-//            if(page_mode_info !== null && page_mode_info.length == 2){
-//                var page = parseInt(page_mode_info[0]);
-//                var mode = page_mode_info[1];
-//                var id = btn["id"];
-//                var page_display = mode.substr(0,1);
-//                
-//                if(mode === 'thumb' || mode.indexOf('up') === 1){
-//                    
-//                    var total_pages = Drupal.settings.islandoraInternetArchiveBookReader.pages.length;
-//                    
-//                    if(null !== btn && btn !== undefined && id !== undefined && null !== btn["id"]){
-//                        switch(id){
-//                            case "ui-slider-handle":                                
-//                                var page = parseInt($(".currentpage").html().split(" ")[1]);
-//                                if(page === 1){
-//                                    page_display = "1";
-//                                }
-//                                else if(page_display === "2" && page % 2 === 1)
-//                                    page -= 1;
-//                                break;
-//                            case "BRicon_onepg": 
-//                                page_display = "1";
-//                                if(mode.substr(0,1) === "2" && page % 2 === 1 && page > 1)
-//                                    page -= 1;
-//                                break;
-//                            case "BRicon_twopg":
-//                                if(page === 1){
-//                                    page = 1;
-//                                    page_display = "1";
-//                                }
-//                                else if(mode.substr(0,1) === "1" && page % 2 === 1 && page > 1){
-//                                    page -= 1;
-//                                    page_display = "2";
-//                                }
-//                                else{
-//                                    page_display = "2";
-//                                }
-//                                break;
-//                            case "BRicon_thumb":
-//                                return false;
-//                                break;
-//                            case "BRicon_book_left":                                
-//                                if(page > 1){
-//                                    if(page_display === "1")
-//                                        page -= 1;
-//                                    else if(page_display === "2" && page > 2 && page % 2 === 0)
-//                                        page -= 2;
-//                                    else if(page_display === "2" && page > 3 && page % 2 === 1)
-//                                        page -= 3;
-//                                    else if(page_display === "2" && page <= 3){
-//                                        page = 1;
-//                                        page_display = "1";
-//                                    }
-//                                    else if(page === 1){
-//                                        page = 1;
-//                                        page_display = "1";
-//                                    }
-//                                }
-//                                else{
-//                                    page_display = "1";
-//                                }
-//                                break;
-//                            case "BRicon_book_right":
-//                                if(page === total_pages){
-//                                    page_display = "1";
-//                                }
-//                                else if(page % 2 == 0 && page_display === "2"){
-//                                    page += 2;
-//                                }
-//                                else if(page < total_pages)
-//                                    page += 1;
-//                                break;
-//                            default:
-//                                alert("wrong clicked button!");
-//                                return false;
-//                                break;
-//                        }
-//                    }else{
-//                        if(page === 1 || page === total_pages)
-//                            page_display = "1";
-//                        else
-//                            page_display = mode.substr(0,1);
-//                    }
-//                    
-//                    if(mode === 'thumb' && id !== 'BRicon_twopg' && id !== 'BRicon_onepg'){
-//                        return false;
-//                    }
-//                    else{                        
-//                        if(page_display === "1"){
-//                            pages_array = [page];
-//                        }
-//                        else if(page_display === "2"){
-//                            if(page === 1 || page === total_pages)
-//                                pages_array = [page];                
-//                            else
-//                                pages_array = [page, page+1];
-//                        }
-//                        else{
-//                            alert(page_display + " is not correct");
-//                        }
-//                    }
-//                }
-//                
-//            }
-//            else{
-//                alert("page and mode information is not correct!");
-//                return false;
-//            }
-//
-//      }
-//      else{
-//        //page = parseInt(Drupal.settings.islandora_internet_archive_bookreader.current_page);
-//        pages_array = [1]; 
-//      }
-//      
-//      pages_info.pages_array = pages_array;
-//      pages_info.url_base = url_base;
-//      return pages_info;
-//      
-//  };
-
 })(jQuery);
 
 
