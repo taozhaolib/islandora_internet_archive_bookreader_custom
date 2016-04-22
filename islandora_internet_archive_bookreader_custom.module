@@ -5,7 +5,10 @@
  * The islandora_internet_archive_bookreader_custom moudule.
  */
 
-//define('ISLANDORA_SOLR_VIEW_FEED_SELECTOR_COLLECTION', 'collection_selector');
+define('ISLANDORA_BOOKREADER_CUSTOM_COLLECTIONS', 'book_collection_selector');
+define('ISLANDORA_BOOKREADER_CUSTOM_PDF_DOWNLOAD_SHOW', 'pdf_download_show');
+define('ISLANDORA_BOOKREADER_CUSTOM_PAGE_DOWNLOAD_SHOW', 'page_download_show');
+define('ISLANDORA_BOOKREADER_CUSTOM_SOCIAL_LINK_SHOW', 'social_link_show');
 
 
 /**
@@ -20,7 +23,7 @@ function islandora_internet_archive_bookreader_custom_menu() {
         'page callback' => 'islandora_internet_archive_bookreader_custom_pdf_generator',
         'page arguments' => array(2),
         'type' => MENU_LOCAL_TASK,
-        'access callback' => 'islandora_object_manage_access_callback',
+        'access callback' => 'islandora_bookreader_custom_access_callback',
         'weight' => 5,
         'access arguments' => array(
         array(
@@ -29,7 +32,24 @@ function islandora_internet_archive_bookreader_custom_menu() {
           ISLANDORA_ADD_DS,
           ISLANDORA_PURGE,
           ISLANDORA_INGEST,
-        ), 2),
+        ), 2, "pdf_generator"),
+    );
+
+    $items['admin/islandora/islandora_viewers/islandora_bookreader_custom'] = array(
+        'title' => 'Islandora Internet Archive Bookreader Customization Configuration:',
+        'description' => 'Configure the customizations of the Islandora Internet Archive Bookreader.',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('islandora_bookreader_custom_settings'),
+        'access arguments' => array('Islandora bookreader custom settings'),
+        'type' => MENU_NORMAL_ITEM,
+    );
+    
+    $items['islandora_solr_view_feed/collection/get/views'] = array(
+        'page callback' => 'load_collection_view_associations',
+        'access arguments' => array('administer Islandora Solr View Feed'),
+        'file' => 'includes/utilities.inc',
+        'delivery callback' => 'deliver_collection_view_associations',
+        'type' => MENU_CALLBACK,
     );
     
     $items['islandora/object/%islandora_object/custom/%/%islandora_datastream/download'] = array(
@@ -92,19 +112,26 @@ function islandora_internet_archive_bookreader_custom_block_view($delta = '') {
         if($pid = get_pid_by_url()){
 
             $object = islandora_object_load($pid);
+            
+            if(empty($object) || hasAccessCustomFeature($object, "download_block") == FALSE){
+                return null;
+            }
+
             $fedoraObjExt = new FedoraObjectExtended($object->id, $object->repository);
             $model = $fedoraObjExt->getFedoraObjectModel();            
             if(empty($model) || $model !== "bookCModel"){
                 return;
             }
-            switch ($delta) {
-                case 'social_link_block':
+            switch ($delta) {                
+                case 'social_link_block':                    
                     $block['subject'] = 'Share this book:';
                     $block['content'] = bookreader_custom_social_link_block_view($object);
-                    break;
+                    break;                
                 case 'reader_block':
                     $block['subject'] = 'Book and pages download links:';
                     $block['content'] = bookreader_custom_download_block_view($object);
+                    break;
+                default:
                     break;
             }
         }
@@ -122,14 +149,14 @@ function islandora_bookreader_custom_datastream_download($newFileName, AbstractD
     $GLOBALS['devel_shutdown'] = FALSE;
 
     try{
-        if ($version !== NULL) {
-          if (isset($datastream[$version])) {
-            $datastream = $datastream[$version];
-          }
-          else {
-            return drupal_not_found();
-          }
-        }
+//        if ($version !== NULL) {
+//          if (isset($datastream[$version])) {
+//            $datastream = $datastream[$version];
+//          }
+//          else {
+//            return drupal_not_found();
+//          }
+//        }
         header('Content-type: ' . $datastream->mimetype);
         if ($datastream->controlGroup == 'M' || $datastream->controlGroup == 'X') {
           header('Content-length: ' . $datastream->size);
@@ -194,3 +221,95 @@ function islandora_bookreader_custom_datastream_download($newFileName, AbstractD
     exit();
 }
 
+function islandora_bookreader_custom_settings($form, &$form_state) {
+    module_load_include('inc', 'islandora_internet_archive_bookreader_custom', 'includes/admin');
+    $collections = get_collection_options();
+    //$customs = get_custom_options();
+    //$views = get_view_options();
+    //$collection_view_associations = load_collection_view_associations();
+    
+    $form['bookreader_custom_fieldset'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Configure the islandora bookreader customization settings'),
+        '#prefix' => '<div id="bookreader_custom_div">',
+        '#suffix' => '</div>',
+    );
+    
+    $form['bookreader_custom_fieldset']['wrapper'][ISLANDORA_BOOKREADER_CUSTOM_COLLECTIONS] = array(
+        '#type' => 'select',
+        '#title' => t('Select an Islandora book collection ...'),
+        '#required' => true,
+        '#options' => $collections,
+        '#description' => t('Choose a book collection to set up the solr view feed.'),
+    );
+
+    $form['bookreader_custom_fieldset']['wrapper'][ISLANDORA_BOOKREADER_CUSTOM_PDF_DOWNLOAD_SHOW] = array(
+        '#type' => 'radios',
+        '#title' => t('Show the PDF book download link'),
+        '#required' => true,
+        '#options' => array(1 => t('Yes'), 0 => t('No')),
+    );
+    
+    $form['bookreader_custom_fieldset']['wrapper'][ISLANDORA_BOOKREADER_CUSTOM_PAGE_DOWNLOAD_SHOW] = array(
+        '#type' => 'radios',
+        '#title' => t('Show the book page images download link'),
+        '#required' => true,
+        '#options' => array(1 => t('Yes'), 0 => t('No')),
+    );
+    
+    $form['bookreader_custom_fieldset']['wrapper'][ISLANDORA_BOOKREADER_CUSTOM_SOCIAL_LINK_SHOW] = array(
+        '#type' => 'radios',
+        '#title' => t('Show the social links to the book and pages'),
+        '#required' => true,
+        '#options' => array(1 => t('Yes'), 0 => t('No')),
+    );
+    $form['actions']['#type'] = 'actions';
+    $form['actions']['submit'] = array('#type' => 'submit', '#value' => t('Save configuration'));
+
+    if (!empty($_POST) && form_get_errors()) {
+      drupal_set_message(t('The settings have not been saved because of the errors.'), 'error');
+    }
+    
+    $form['#submit'][] = 'islandora_bookreader_custom_settings_submit';
+    if (!isset($form['#theme'])) {
+      $form['#theme'] = 'system_settings_form';
+    }
+
+    $bookreader_bookreader_custom_admin_settings = array(
+        'collection' => ISLANDORA_BOOKREADER_CUSTOM_COLLECTIONS,
+        'pdf_download_link' => ISLANDORA_BOOKREADER_CUSTOM_PDF_DOWNLOAD_SHOW,
+        'page_image_download_link' => ISLANDORA_BOOKREADER_CUSTOM_PAGE_DOWNLOAD_SHOW,   
+        'social_link' => ISLANDORA_BOOKREADER_CUSTOM_SOCIAL_LINK_SHOW,
+    );
+    drupal_add_js(array('islandora_bookreader_custom_admin' => $bookreader_bookreader_custom_admin_settings), 'setting');
+    drupal_add_js(drupal_get_path('module', 'islandora_internet_archive_bookreader_custom') . '/js/bookreader_custom_admin.js', array('group' => JS_LIBRARY));
+    
+    return $form;
+}
+
+function islandora_bookreader_custom_settings_submit($form, &$form_state) {
+    module_load_include('inc', 'islandora_internet_archive_bookreader_custom', 'includes/utilities');
+    save_islandora_bookreader_custom_configuration(
+            $form_state['values'][ISLANDORA_BOOKREADER_CUSTOM_COLLECTIONS], 
+            $form_state['values'][ISLANDORA_BOOKREADER_CUSTOM_PDF_DOWNLOAD_SHOW], 
+            $form_state['values'][ISLANDORA_BOOKREADER_CUSTOM_PAGE_DOWNLOAD_SHOW],
+            $form_state['values'][ISLANDORA_BOOKREADER_CUSTOM_SOCIAL_LINK_SHOW]
+    );
+    drupal_set_message(t('The settings for islandora bookreader customizations have been saved.'));
+}
+
+function islandora_bookreader_custom_access_callback($perms, AbstractFedoraObject $object = NULL, $custom_type = NULL) {
+    
+    $has_access = FALSE;
+    
+    for ($i = 0; $i < count($perms) && !$has_access; $i++) {
+      $has_access = $has_access || islandora_object_access($perms[$i], $object);
+    }
+    
+    if($has_access == TRUE && !empty($custom_type)){
+        module_load_include('inc', 'islandora_internet_archive_bookreader_custom', 'includes/utilities');
+        $has_access = hasAccessCustomFeature($object, $custom_type);
+    }
+
+    return $has_access;
+}

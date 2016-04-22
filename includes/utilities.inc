@@ -6,6 +6,7 @@ function bookreader_custom_social_link_block_view(AbstractFedoraObject $object) 
     $block = null;
     
     $path = drupal_get_path('module', 'islandora_internet_archive_bookreader_custom');
+    $object_url_base = get_object_url_base_by_url();
    
     try{
         $pid = $object->id;
@@ -25,7 +26,8 @@ function bookreader_custom_social_link_block_view(AbstractFedoraObject $object) 
           'pageImgUrl' => '',
           'PageDesc' => '',
           'bookDesc' => $object->label,
-          'pages' => $pages
+          'pages' => $pages,
+          'objectUrlBase' => $object_url_base
         );
 
         $block = array
@@ -66,17 +68,29 @@ function bookreader_custom_social_link_block_view(AbstractFedoraObject $object) 
 function bookreader_custom_download_block_view(AbstractFedoraObject $object) {
     
     $fileName = get_download_file_prefix($object);    
+    $object_url_base = get_object_url_base_by_url();
     
-    $link = $GLOBALS['base_url']."/islandora/object/".$object->id."/custom/".$fileName."/PDF/download";
+    $pdf_download_link = "";
+    if(hasAccessCustomFeature($object, "pdf_generator") == TRUE){
+        if(strpos($object_url_base, "/islandora/object/") !== FALSE){
+            $link = $GLOBALS['base_url']."/islandora/object/".$object->id."/custom/".$fileName."/PDF/download";
+        }
+        elseif(strpos($object_url_base, "/uuid/")){
+            $uuid = explode(":", $object->id)[1];
+            $link = $GLOBALS['base_url']."/islandora/object/".$uuid."/custom/".$fileName."/PDF/download";
+        }
+        $pdf_download_link = t('<a href="'.$link.'">PDF book download</a><BR>');
+    }
     $path = drupal_get_path('module', 'islandora_internet_archive_bookreader_custom');
     $download_settings = array(
         'fileName' => $fileName,
         'containerDiv' => 'block-islandora-internet-archive-bookreader-custom-reader-block',
+        'objectUrlBase' => $object_url_base
     );
     
     $block = array
     (
-        '#markup' => t('<a href="'.$link.'">PDF book download</a><BR><BR>'),
+        '#markup' => $pdf_download_link,
         '#attached' => array
           (
             'js' => array
@@ -149,6 +163,36 @@ function get_page_by_url() {
     }
 }
 
+function get_object_url_base_by_url(){
+    global $base_url;
+    $script_url = $_SERVER['SCRIPT_URL'];
+    
+    $pid = get_pid_by_url();
+    if(strpos($script_url, "uuid") !== FALSE){
+        $id = explode(":", $pid);
+        $id = $id[1];
+        return $base_url . "/uuid/";
+    }
+    elseif(strpos($script_url, "islandora/object") !== FALSE){
+        return $base_url . "/islandora/object/";
+    }
+}
+
+function get_object_link_by_url(){
+    global $base_url;
+    $url = current_path();
+    //$url = "https://dev.repository.ou.edu/uuid/f5315243-4db4-59a6-b60c-03c016ebdafb#page/18/mode/2up"; //current_path();
+    $pid = get_pid_by_url();
+    if(strpos($url, "uuid") !== FALSE){
+        $id = explode(":", $pid);
+        $id = $id[1];
+        return $base_url . "/uuid/" . $id;
+    }
+    elseif(strpos($url, "islandora/object") !== FALSE){
+        return $base_url . "/islandora/object/" . $pid;
+    }
+}
+
 /**
  * 
  */
@@ -175,19 +219,19 @@ function get_download_file_prefix(AbstractFedoraObject $object) {
         $content = $stream->repository->api->a->getDatastreamDissemination($pid, $stream->id, $stream->createdDate, null);
         
         // build a fake $content in order to mimic the MODS data in repository.ou.edu to execute the code, development purpose only
-        $content = "<?xml version=\"1.0\" encoding=\"utf-8\"?><mods version=\"3.5\" xsi:schemaLocation=\"http://www.loc.gov/mods/v3 http://www.loc.gov/standards/mods/v3/mods-3-5.xsd\">"
-                        . "<name type=\"personal\" usage=\"primary\">"
-                            . "<namePart>Gaubil, Antoine</namePart>"
-                            . "<namePart type=\"date\">1689-1759</namePart>"
-                        . "</name>"
-                        . "<originInfo>"
-                            . "<place><placeTerm type=\"code\" authority=\"marccountry\">enk</placeTerm></place>"
-                            . "<place><placeTerm type=\"text\">London]</placeTerm></place>"
-                            . "<dateIssued>[1758]</dateIssued>"
-                            . "<dateIssued encoding=\"marc\">1758</dateIssued>"
-                            . "<issuance>monographic</issuance>"
-                        . "</originInfo>"
-                    . "</mods>";
+/*        $content = "<?xml version=\"1.0\" encoding=\"utf-8\"?><mods version=\"3.5\" xsi:schemaLocation=\"http://www.loc.gov/mods/v3 http://www.loc.gov/standards/mods/v3/mods-3-5.xsd\">" */
+//                        . "<name type=\"personal\" usage=\"primary\">"
+//                            . "<namePart>Gaubil, Antoine</namePart>"
+//                            . "<namePart type=\"date\">1689-1759</namePart>"
+//                        . "</name>"
+//                        . "<originInfo>"
+//                            . "<place><placeTerm type=\"code\" authority=\"marccountry\">enk</placeTerm></place>"
+//                            . "<place><placeTerm type=\"text\">London]</placeTerm></place>"
+//                            . "<dateIssued>[1758]</dateIssued>"
+//                            . "<dateIssued encoding=\"marc\">1758</dateIssued>"
+//                            . "<issuance>monographic</issuance>"
+//                        . "</originInfo>"
+//                    . "</mods>";
         
         $namePrefix = "";
         $yearPrefix = "";
@@ -240,4 +284,112 @@ function get_download_file_prefix(AbstractFedoraObject $object) {
     }
     
     return $fileName;
+}
+
+function save_islandora_bookreader_custom_configuration($collection, $pdf_download_show, $page_download_show, $social_link_show) {
+    
+    global $user;
+    $uid = $user->uid;
+    
+    $settings_arr = array();
+    
+    $settings = variable_get("bookreader_custom_configurations");
+    if(!empty($settings)){
+        $settings_arr = json_decode($settings, TRUE);
+    }
+    $settings_arr[$collection]["pdf_download_show"] = $pdf_download_show;
+    $settings_arr[$collection]["page_download_show"] = $page_download_show;
+    $settings_arr[$collection]["social_link_show"] = $social_link_show;
+    
+    variable_set("bookreader_custom_configurations", json_encode($settings_arr));
+}
+
+function load_islandora_bookreader_custom_configuration($pid) {
+    $configurations = variable_get("bookreader_custom_configurations");
+    if(!empty($configurations)){
+        $configurations = json_decode($configurations, TRUE);
+    }
+    if(!empty($configurations[$pid])){
+        return $configurations[$pid]; 
+    }
+    else{
+        return NULL;
+    }
+}
+
+function get_parent_collection_pid(AbstractFedoraObject $object) {
+    module_load_include('inc', 'islandora_internet_archive_bookreader_custom', 'includes/utilities');
+    
+    $repository = $object->repository;
+    $pid = $object->id;
+    
+    $query = <<<EOQ
+    PREFIX islandora-rels-ext: <http://islandora.ca/ontology/relsext#>
+    PREFIX fedora-rels-ext: <info:fedora/fedora-system:def/relations-external#>
+    SELECT DISTINCT ?object ?label
+    FROM <#ri>
+    WHERE {
+        <info:fedora/!pid> ?collection_predicate ?object;
+        <fedora-model:label> ?label .
+        ?object <fedora-model:state> <fedora-model:Active>
+        .
+        !optionals
+        !filters
+          }
+        !order
+EOQ;
+
+    $query_optionals = (array) module_invoke('islandora_xacml_api', 'islandora_basic_collection_get_query_optionals', 'view');
+    $query_filters = (array) module_invoke('islandora_xacml_api', 'islandora_basic_collection_get_query_filters');
+    $filter_map = function ($filter) {
+      return "FILTER($filter)";
+    };
+    $collection_predicate_filters = "sameTerm(?collection_predicate, <fedora-rels-ext:isPartOf>)";
+    $collection_predicate_filters .= " || sameTerm(?collection_predicate, <fedora-rels-ext:isMemberOfCollection>) || sameTerm(?collection_predicate, <fedora-rels-ext:isMemberOf>)";
+    $query_filters[] = $collection_predicate_filters;
+    $query_order = "ORDER BY DESC(?label)";
+    $query = format_string($query, array(
+      '!optionals' => !empty($query_optionals) ? ('OPTIONAL {{' . implode('} UNION {', $query_optionals) . '}}') : '',
+      '!filters' => implode(' ', array_map($filter_map, $query_filters)),
+      '!order' => $query_order,
+    ));
+    $query = format_string($query, array(
+      '!pid' => $pid,
+    ));
+
+    $results = $repository->ri->sparqlQuery($query, 'unlimited');
+
+    if (count($results) > 0) {
+      return $parent = $results[0]['object']['value'];
+    }
+}
+
+function hasAccessCustomFeature(AbstractFedoraObject $object, $type){
+    $has_access = FALSE;
+    
+    $models = $object->models;
+    $model = $models[0];
+    if($model == "islandora:bookCModel"){
+        $has_access = TRUE;
+    }
+    
+    $pid = $object->id;
+    if(!empty($pid)){
+        $parent = get_parent_collection_pid($object);
+        $configurations = load_islandora_bookreader_custom_configuration($parent);
+        if(!empty($configurations)){
+            switch($type){
+                case "pdf_generator":
+                    $has_access = $configurations['pdf_download_show'];
+                    break;
+                case "download_block":
+                    $has_access = $configurations['page_download_show'];
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+    
+    return $has_access;
 }

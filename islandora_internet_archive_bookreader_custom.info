@@ -1,3 +1,4 @@
+package = Islandora Internet Archive Bookreader Custom
 name = Islandora Internet Archive Bookreader Custom
 description = Contains the customizations to the Islandora Internet Archive Bookreader module.
 dependencies[] = islandora

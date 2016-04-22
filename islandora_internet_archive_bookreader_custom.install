@@ -13,11 +13,78 @@
 function islandora_internet_archive_bookreader_custom_install() {
   module_load_include('module', 'islandora', 'islandora');
   module_load_include('module', 'islandora', 'islandora_internet_archive_bookreader');
+
+//  if(!db_table_exists("islandora_bookreader_custom")) {
+//        db_create_table('islandora_bookreader_custom', array(
+//            'description' => 'Configurations of islandora bookreader customizations',
+//            'fields' => array(
+//            'id' => array(
+//                'description' => 'ID of bookreader custom settings.',
+//                'type' => 'serial',
+//                'size' => 'big',
+//                'not null' => TRUE,
+//            ),
+//            'pid' => array(
+//              'description' => 'Collection pid.',
+//              'type' => 'varchar',
+//              'length' => 80,
+//              'not null' => TRUE,
+//            ),
+//            'pdf_download_show' => array(
+//              'description' => 'Show the PDF book download link',
+//              'type' => 'int',
+//              'size' => 'tiny',
+//              'default' => 1,
+//            ),
+//            'page_download_show' => array(
+//              'description' => 'Show the book page images download link',
+//              'type' => 'int',
+//              'size' => 'tiny',
+//              'default' => 1,
+//            ),
+//            'social_link_show' => array(
+//              'description' => 'Show the social links to the book and pages',
+//              'type' => 'int',
+//              'size' => 'tiny',
+//              'default' => 1,
+//            ),
+//            'book_pdf_source_type' => array(
+//              'description' => 'The type of image file to generate PDF book',
+//              'type' => 'int',
+//              'size' => 'small',
+//              'default' => 0,
+//            ),
+//            'social_link_type' => array(
+//              'description' => 'The types of social links to show in the custom block',
+//              'type' => 'varchar',
+//              'length' => 50,
+//              'default' => '',
+//            ),
+//            'creator' => array(
+//              'description' => 'association creator.',
+//              'type' => 'varchar',
+//              'length' => 20,
+//            ),
+//            'social_link_show' => array(
+//              'description' => 'created time.',
+//              'type' => 'int',
+//            ),
+//            'created_time' => array(
+//              'description' => 'created time.',
+//              'type' => 'int',
+//            ),
+//          ),
+//        'primary key' => array('id'),
+//    ));
+//  }
 }
 
 /**
  * Implements hook_uninstall().
  */
 function islandora_internet_archive_bookreader_custom_uninstall() {
-
+//    if(db_table_exists("islandora_bookreader_custom")) {
+//        db_drop_table("islandora_bookreader_custom");
+//    }
 }
+
